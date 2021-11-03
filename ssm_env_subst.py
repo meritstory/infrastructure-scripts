@@ -9,7 +9,7 @@ import subprocess
 parser = argparse.ArgumentParser(description='This tool fetches paramters from a provided AWS SSM namespace and substitutes their values instead of placeholders in the specified environment variables file.')
 parser.add_argument(dest='ssm_path', help="SSM path from which to fetch variables", type=str)
 parser.add_argument(dest='env_file', help="Destination env file in which variable placeholders should be replaced", type=str)
-parser.add_argument('--aws-profile', help="AWS profile to use. Will use the \"default\" profile if not specified.", type=str, default="default")
+parser.add_argument('--aws-profile', help="AWS profile to use. Will use the \"default\" profile if not specified.", type=str)
 args=parser.parse_args()
 if hasattr(args, "help"):
     parser.print_help()
@@ -20,7 +20,8 @@ if not os.path.exists(args.env_file):
     sys.exit()
 
 # Get the parameters from AWS SSM as JSON
-command = f'aws --profile {args.aws_profile} ssm get-parameters-by-path --path {args.ssm_path} --query "Parameters[*].{{Name:Name,Value:Value}}" --with-decryption --no-paginate'
+profile = f"--profile {args.aws_profile}" if hasattr(args,"aws_profile") else "";
+command = f'aws {profile} ssm get-parameters-by-path --path {args.ssm_path} --query "Parameters[*].{{Name:Name,Value:Value}}" --with-decryption --no-paginate'
 pipe = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 jsons,err = pipe.communicate()
 if (pipe.returncode != 0):
