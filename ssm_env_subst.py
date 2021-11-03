@@ -23,6 +23,7 @@ profile = f"--profile {args.aws_profile}" if args.aws_profile is not None else "
 command = f'aws {profile} ssm get-parameters-by-path --path {args.ssm_path} --query "Parameters[*].{{Name:Name,Value:Value}}" --with-decryption --no-paginate'
 pipe = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 jsons,err = pipe.communicate()
+print(f"AWS exit code: {pipe.returncode}")
 if (pipe.returncode != 0):
     sys.exit(err)
 json = json.loads(jsons)
