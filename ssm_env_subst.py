@@ -16,8 +16,7 @@ if hasattr(args, "help"):
 
 # Validate arguments
 if not os.path.exists(args.env_file):
-    print(f'Environment file "{args.env_file}" does not exist')
-    sys.exit()
+    sys.exit(f'Environment file "{args.env_file}" does not exist')
 
 # Get the parameters from AWS SSM as JSON
 profile = f"--profile {args.aws_profile}" if args.aws_profile is not None else "";
@@ -25,8 +24,7 @@ command = f'aws {profile} ssm get-parameters-by-path --path {args.ssm_path} --qu
 pipe = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 jsons,err = pipe.communicate()
 if (pipe.returncode != 0):
-    print(err)
-    sys.exit()
+    sys.exit(err)
 json = json.loads(jsons)
 
 # Create a new environment and extend it with fetched SSM variables
@@ -44,4 +42,4 @@ ret = subprocess.run(envSubstCommand, capture_output=True, shell=True, env=myenv
 if ret.returncode == 0:
     print("Environment variables were successfully substituted from AWS SSM")
 else:
-    print("Error: " + ret.stderr.decode())
+    sys.exit("Error: " + ret.stderr.decode())
