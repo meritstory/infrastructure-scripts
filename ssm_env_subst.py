@@ -20,7 +20,7 @@ if not os.path.exists(args.env_file):
     sys.exit()
 
 # Get the parameters from AWS SSM as JSON
-profile = f"--profile {args.aws_profile}" if hasattr(args,"aws_profile") else "";
+profile = f"--profile {args.aws_profile}" if args.aws_profile is not None else "";
 command = f'aws {profile} ssm get-parameters-by-path --path {args.ssm_path} --query "Parameters[*].{{Name:Name,Value:Value}}" --with-decryption --no-paginate'
 pipe = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 jsons,err = pipe.communicate()
