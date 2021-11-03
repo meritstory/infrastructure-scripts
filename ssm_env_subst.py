@@ -21,11 +21,10 @@ if not os.path.exists(args.env_file):
 # Get the parameters from AWS SSM as JSON
 profile = f"--profile {args.aws_profile}" if args.aws_profile is not None else "";
 command = f'aws {profile} ssm get-parameters-by-path --path {args.ssm_path} --query "Parameters[*].{{Name:Name,Value:Value}}" --with-decryption --no-paginate'
-pipe = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+pipe = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 jsons,err = pipe.communicate()
-print(f"AWS exit code: {pipe.returncode}")
 if (pipe.returncode != 0):
-    sys.exit(err)
+    sys.exit(f'AWS SSM exit code: {pipe.returncode}. Error: {err.decode()}')
 json = json.loads(jsons)
 
 # Create a new environment and extend it with fetched SSM variables
