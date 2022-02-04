@@ -23,8 +23,7 @@ if not os.path.exists(args.env_file):
 myenv = os.environ.copy()
 
 # Get the parameters from AWS SSM and store them in the environment
-profileName = f"{args.aws_profile}" if args.aws_profile is not None else "default"
-session = boto3.session.Session(profile_name=profileName)
+session = boto3.session.Session() if args.aws_profile is None else boto3.session.Session(profile_name=args.aws_profile)
 client = session.client('ssm')
 paginator = client.get_paginator('get_parameters_by_path')
 response_iterator = paginator.paginate(
