@@ -4,6 +4,7 @@ import os
 import argparse
 import sys
 import subprocess
+import boto3
 
 # Define and parse the arguments supported by this tool
 parser = argparse.ArgumentParser(description='This tool fetches paramters from a provided AWS SSM namespace and substitutes their values instead of placeholders in the specified environment variables file.')
@@ -18,20 +19,26 @@ if hasattr(args, "help"):
 if not os.path.exists(args.env_file):
     sys.exit(f'Environment file "{args.env_file}" does not exist')
 
-# Get the parameters from AWS SSM as JSON
-profile = f"--profile {args.aws_profile}" if args.aws_profile is not None else "";
-command = f'aws {profile} ssm get-parameters-by-path --path {args.ssm_path} --query "Parameters[*].{{Name:Name,Value:Value}}" --with-decryption --no-paginate'
-pipe = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-jsons,err = pipe.communicate()
-if (pipe.returncode != 0):
-    sys.exit(f'AWS SSM exit code: {pipe.returncode}. Error: {err.decode()}')
-json = json.loads(jsons)
-
-# Create a new environment and extend it with fetched SSM variables
+# Create a new environment for storing the parameters
 myenv = os.environ.copy()
-for item in json:
-    itemName = item['Name'].split("/")[-1]
-    myenv[itemName] = item['Value']
+
+# Get the parameters from AWS SSM and store them in the environment
+profileName = f"{args.aws_profile}" if args.aws_profile is not None else "default"
+session = boto3.session.Session(profile_name=profileName)
+client = session.client('ssm')
+paginator = client.get_paginator('get_parameters_by_path')
+response_iterator = paginator.paginate(
+    Path=args.ssm_path,
+    Recursive=False,
+    WithDecryption=True,
+    PaginationConfig={
+        'PageSize': 10
+    }
+)
+for page in response_iterator:
+    for param in page['Parameters']:
+        itemName = param['Name'].split("/")[-1]
+        myenv[itemName] = param['Value']
 
 # Usage of envsubst from https://stackoverflow.com/a/61538920/1442776
 envSubstCommand = f'originalfile="{args.env_file}"; \
